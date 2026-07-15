@@ -30,7 +30,6 @@ public class Interaccion {
     @Column(name = "hora")
     private LocalTime hora;
 
-    // "short" es palabra reservada en Java; el campo se llama "video" pero mapea a la columna real "short".
     @Column(name = "short")
     private String video;
 
