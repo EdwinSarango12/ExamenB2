@@ -1,0 +1,76 @@
+================= RESULTADOS MAPREDUCE =================
+
+--- 1) Video mas visto ---
+  GANADOR: video12  ->  12 views
+  Top 5:
+    1. video12: 12
+    2. video1: 10
+    3. video3: 10
+    4. video14: 10
+    5. video7: 9
+
+--- 2) Video con mas likes ---
+  GANADOR: video13  ->  12 likes
+  Top 5:
+    1. video13: 12
+    2. video7: 11
+    3. video1: 10
+    4. video11: 10
+    5. video10: 9
+
+--- 3) Video mas comentado ---
+  GANADOR: video4  ->  12 comments
+  Top 5:
+    1. video4: 12
+    2. video13: 11
+    3. video2: 10
+    4. video6: 10
+    5. video3: 10
+
+--- 4) Usuario mas recurrente ---
+  GANADOR: Jorge  ->  47 interacciones
+  Top 5:
+    1. Jorge: 47
+    2. Moises: 45
+    3. Diego: 40
+    4. Ximena: 40
+    5. Sofia: 39
+
+--- 5) Hora con mas interaccion ---
+  GANADOR: 13  ->  30 interacciones
+  Top 5:
+    1. 13: 30
+    2. 19: 30
+    3. 23: 27
+    4. 12: 27
+    5. 20: 27
+    6. 05: 25
+    7. 15: 24
+    8. 08: 22
+    9. 16: 22
+    10. 11: 22
+    11. 10: 22
+    12. 06: 19
+    13. 09: 19
+    14. 02: 19
+    15. 14: 19
+    16. 17: 18
+    17. 04: 18
+    18. 22: 18
+    19. 21: 17
+    20. 18: 16
+    21. 03: 16
+    22. 01: 15
+    23. 00: 15
+    24. 07: 13
+
+--- 6) Video con mayor Ratio de Interaccion ---
+  Ratio = (likes + comments + shares) / views
+  GANADOR: video13  ->  ratio 7.750
+  Top 5:
+    1. video13: 7.750
+    2. video11: 5.800
+    3. video10: 4.800
+    4. video15: 4.000
+    5. video6: 3.571
+==========================================================

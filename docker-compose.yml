@@ -1,0 +1,89 @@
+x-app-common: &app-common
+  build: ./springboot-app
+  image: examenfinal-app:latest
+  restart: unless-stopped
+  depends_on:
+    mysql-db:
+      condition: service_healthy
+  healthcheck:
+    test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/datos"]
+    interval: 5s
+    timeout: 5s
+    retries: 20
+    start_period: 20s
+
+x-datasource-env: &datasource-env
+  SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/examenad
+  SPRING_DATASOURCE_USERNAME: root
+  SPRING_DATASOURCE_PASSWORD: root
+
+services:
+  mysql-db:
+    image: mysql:8.0
+    container_name: mysql-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./script.sql:/docker-entrypoint-initdb.d/script.sql:ro
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app1:
+    <<: *app-common
+    container_name: examenfinal-app1
+    environment:
+      <<: *datasource-env
+      SERVER_NAME: "Servidor 1"
+    ports:
+      - "8081:8080"
+
+  app2:
+    <<: *app-common
+    container_name: examenfinal-app2
+    environment:
+      <<: *datasource-env
+      SERVER_NAME: "Servidor 2"
+    ports:
+      - "8082:8080"
+
+  nginx:
+    image: nginx:alpine
+    container_name: examenfinal-nginx-lb
+    restart: unless-stopped
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "8088:80"
+    depends_on:
+      app1:
+        condition: service_healthy
+      app2:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:80/datos"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  mapreduce:
+    build: ./mapreduce
+    image: examenfinal-mapreduce:latest
+    container_name: mapreduce
+    profiles: ["tools"]
+    volumes:
+      - ./datos.txt:/app/datos.txt:ro
+      - ./mapreduce/salida:/app/salida
+    entrypoint: ["python", "mapreduce.py", "--file", "/app/datos.txt",
+                 "--splits-dir", "/app/salida/splits",
+                 "--output", "/app/salida/resultados_mapreduce.txt"]
+
+volumes:
+  mysql_data:
