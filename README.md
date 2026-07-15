@@ -1,6 +1,6 @@
 # Informe Técnico — Analítica de Interacciones de Red Social Estudiantil (PowerESFOT)
 
-## 0. Datos del proyecto
+## Datos del proyecto
 
 - **Empresa / caso**: PowerESFOT — Community Manager, red social estudiantil (15 videos, 500 interacciones).
 - **Base de datos**: MySQL 8.0, esquema `examenad`, tabla `redes` (usuario, accion, fecha, hora, short/video).
@@ -8,7 +8,7 @@
 
 ---
 
-## 1. Descripción general del sistema y arquitectura
+## Descripción general del sistema y arquitectura
 
 El sistema implementa el siguiente flujo, orquestado íntegramente con Docker Compose:
 
@@ -46,48 +46,22 @@ El sistema implementa el siguiente flujo, orquestado íntegramente con Docker Co
                                    └─────────────────────┘
 ```
 
-**Componentes:**
+  **Nginx como balanceador de carga**: definición `upstream backend { server app1:8080; server app2:8080; }`. Nginx usa por defecto el algoritmo **round-robin**, por lo que cada request entrante a `http://localhost:8088/datos` se turna entre `app1` y `app2`.
 
-1. **MySQL + volumen Docker**: `script.sql` se monta como bind volume de solo lectura en `/docker-entrypoint-initdb.d/script.sql`. MySQL ejecuta ese script automáticamente la primera vez que el volumen de datos (`mysql_data`) está vacío, creando la base `examenad` y poblando la tabla `redes` con 500 interacciones.
-
-2. **Dos instancias Spring Boot (app1 / app2)**: mismo artefacto (`examenfinal-app:latest`), mismo `Dockerfile`, diferenciadas únicamente por la variable de entorno `SERVER_NAME`. Exponen `GET /datos`, que consulta la tabla `redes` vía Spring Data JPA y devuelve **texto plano** (no JSON), una línea por registro, con el formato pedido:
-
-   ```
-   Diego, view, 2026-07-08, 06:01:00, video8
-   ```
-
-   Cada respuesta incluye el header `X-Served-By` con el nombre del servidor que atendió la petición, para poder demostrar el balanceo.
-
-3. **Nginx como balanceador de carga**: definición `upstream backend { server app1:8080; server app2:8080; }`. Nginx usa por defecto el algoritmo **round-robin**, por lo que cada request entrante a `http://localhost:8088/datos` se turna entre `app1` y `app2`.
-
-4. **Procesamiento MapReduce (Python)**: un script (`mapreduce/mapreduce.py`) consume el endpoint `/datos` a través del balanceador, y ejecuta un pipeline **Map → Shuffle → Reduce** (implementado con `multiprocessing.Pool`, simulando localmente el modelo de programación de MapReduce) para calcular las 6 métricas solicitadas. Se puede ejecutar tanto desde el host (`python mapreduce.py`) como containerizado (`docker compose run --rm mapreduce`).
+  **Procesamiento MapReduce (Python)**: un script (`mapreduce/mapreduce.py`) consume el endpoint `/datos` a través del balanceador, y ejecuta un pipeline **Map → Shuffle → Reduce** (implementado con `multiprocessing.Pool`, simulando localmente el modelo de programación de MapReduce) para calcular las 6 métricas solicitadas. Se puede ejecutar tanto desde el host (`python mapreduce.py`) como containerizado (`docker compose run --rm mapreduce`).
 
 ---
 
-## 2. Detalle de implementación
+## Detalle de implementación
 
-### 2.1 Entidad y endpoint (Spring Boot)
+###  Entidad y endpoint (Spring Boot)
 
 - `Interaccion.java`: entidad JPA mapeada a la tabla `redes`. El campo Java se llama `video` (mapeado a la columna real `short`, porque `short` es palabra reservada en Java y no puede usarse como nombre de campo).
 - `DatosController.java`: `GET /datos`, `produces = text/plain`. Formatea explícitamente fecha (`yyyy-MM-dd`) y hora (`HH:mm:ss`) con `DateTimeFormatter`, porque `LocalTime.toString()` omite los segundos cuando son `:00`, lo que rompería el parseo aguas abajo.
 - Variables de entorno inyectadas por contenedor: `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME/PASSWORD`, `SERVER_NAME`.
 
-### 2.2 Balanceador (Nginx)
 
-```nginx
-upstream backend {
-    server app1:8080;
-    server app2:8080;
-}
-server {
-    listen 80;
-    location /datos {
-        proxy_pass http://backend/datos;
-    }
-}
-```
-
-### 2.3 MapReduce (Python)
+###  MapReduce (Python)
 
 - **Map**: por cada línea recibida (`usuario, accion, fecha, hora, video`), el mapper emite pares `(clave, 1)`:
   - `VIEWS::video`, `LIKES::video`, `COMMENTS::video`, `SHARES::video` según la acción,
@@ -99,21 +73,8 @@ server {
 
 ---
 
-## 3. Incidente detectado y corregido durante las pruebas
 
-Al cargar `script.sql` por primera vez, MySQL 8 (modo estricto por defecto) rechazó el `INSERT` completo:
-
-```
-ERROR 1292 (22007) at line 12: Incorrect date value: '7/8/2026' for column 'fecha' at row 1
-```
-
-**Causa**: las fechas del script venían en formato `M/D/YYYY` (ej. `7/8/2026`), que no es un literal `DATE` válido en MySQL estricto (espera `YYYY-MM-DD`). Al fallar la sentencia `INSERT` (un único `INSERT` multi-fila), la tabla quedaba creada pero **vacía** (0 filas), y el endpoint `/datos` devolvía `Content-Length: 0`.
-
-**Solución aplicada**: se normalizaron las 500 fechas del script a formato ISO `YYYY-MM-DD` (ej. `'7/8/2026'` → `'2026-07-08'`) con un script de reemplazo, se recreó el volumen `mysql_data` para forzar la reinicialización, y se confirmó la carga completa.
-
----
-
-## 4. Pruebas de balanceo de carga (evidencia real)
+##  Pruebas de balanceo de carga
 
 Comando ejecutado y salida real:
 
@@ -157,21 +118,7 @@ mysql-db               mysql:8.0                mysql-db   Up (healthy)
 
 ---
 
-### Resumen de las 6 métricas solicitadas
-
-| # | Métrica                              | Resultado                         |
-|---|---------------------------------------|------------------------------------|
-| 1 | Video más visto                       | **video12** (12 views)             |
-| 2 | Video con más likes                   | **video13** (12 likes)             |
-| 3 | Video más comentado                   | **video4** (12 comments)           |
-| 4 | Usuario más recurrente                 | **Jorge** (47 interacciones)       |
-| 5 | Hora con más interacción               | **13:00** (30 interacciones, empatada con 19:00) |
-| 6 | Video con mayor Ratio de Interacción  | **video13** (ratio = 7.750)        |
-
----
-
-
-## Anexo: cómo reproducir la demostración
+## Ejecución
 
 ```bash
 # 1. Levantar todo el stack
