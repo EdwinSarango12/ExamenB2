@@ -1,21 +1,4 @@
 #!/usr/bin/env python3
-"""
-Driver MapReduce (simulado con multiprocessing) para las metricas de la red
-social estudiantil de PowerESFOT.
-
-Flujo:
-  1. Lee las lineas de entrada desde un archivo de texto plano (datos.txt) o,
-     opcionalmente, desde el endpoint /datos via el balanceador Nginx (--url).
-  2. Divide las lineas en N splits (equivalente a los InputSplits de Hadoop) y
-     escribe cada split en carpeta_splits/split_N.txt.
-  3. Fase MAP: cada split se procesa en un proceso worker independiente
-     (map.py) y su salida intermedia (pares clave/valor) se escribe en
-     carpeta_splits/split_N.out.
-  4. Fase SHUFFLE + REDUCE: se agrupan y suman los pares emitidos (reduce.py).
-  5. Calcula las 6 metricas pedidas y escribe el resultado final agregado
-     en un .txt.
-"""
-
 import argparse
 import sys
 from collections import defaultdict
