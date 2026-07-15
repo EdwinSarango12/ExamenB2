@@ -1,9 +1,3 @@
-"""
-Fase SHUFFLE + REDUCE: agrupa por clave los pares emitidos por los mappers
-(map.py), suma los valores de cada clave (patron word-count) y calcula las
-6 metricas finales pedidas a partir de los conteos reducidos.
-"""
-
 from collections import defaultdict
 
 from map import SEP
