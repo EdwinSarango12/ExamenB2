@@ -2,9 +2,7 @@
 
 ## Datos del proyecto
 
-- **Empresa / caso**: PowerESFOT — Community Manager, red social estudiantil (15 videos, 500 interacciones).
-- **Base de datos**: MySQL 8.0, esquema `examenad`, tabla `redes` (usuario, accion, fecha, hora, short/video).
-- **Repositorio de trabajo**: `ExamenFinal/` (docker-compose.yml, springboot-app/, nginx/, mapreduce/, script.sql).
+- **Integrantes**: Edwin Sarango y Kevin Muñoz
 
 ---
 
