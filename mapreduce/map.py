@@ -1,9 +1,3 @@
-"""
-Fase MAP: parsea cada linea de texto plano (usuario, accion, fecha, hora, video)
-y emite pares (clave, valor) para cada metrica que luego se agrupa en la fase
-de Shuffle y se agrega en la fase Reduce (ver reduce.py).
-"""
-
 SEP = "::"
 
 ACCION_A_CATEGORIA = {
